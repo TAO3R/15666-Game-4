@@ -51,6 +51,6 @@ struct PlayMode : Mode {
 	Scene::Camera *camera = nullptr;
 
 	//text:
-	TextRenderer text{data_path("Maratype.otf"), 128};
-	std::vector< TextRenderer::Quad > line_quads;
+	TextRenderer title{data_path("Maratype.otf"), 128};
+	TextRenderer body{data_path("Maratype.otf"), 64};
 };

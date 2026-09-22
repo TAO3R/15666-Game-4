@@ -45,7 +45,10 @@ struct TextRenderer {
 	// clip_from_pixel maps quad pixel coordinates into clip space
 	// (quad y is up, baseline sits at y == 0, pen starts at x == 0).
 	void draw(std::vector< Quad > const &quads, glm::mat4 const &clip_from_pixel,
-	glm::u8vec4 const &color = glm::u8vec4(0xff));
+	glm::u8vec4 const &color = glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+
+	void draw(std::string const &utf8, glm::uvec2 const &drawable_size,
+			  glm::vec2 const &origin, glm::u8vec4 const &color = glm::u8vec4(0x00, 0x00, 0x00, 0xff));
 };
 
 //pixel -> clip matrix for a drawable_size window.

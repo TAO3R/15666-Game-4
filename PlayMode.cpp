@@ -68,9 +68,6 @@ PlayMode::PlayMode() : scene(*hexapod_scene) {
 	//start music loop playing:
 	// (note: position will be over-ridden in update())
 	leg_tip_loop = Sound::loop_3D(*dusty_floor_sample, 1.0f, get_leg_tip_position(), 10.0f);
-
-	//get some text quads:
-	line_quads = text.shape("ESCAPE WILL MAKE ME GOD.");
 }
 
 PlayMode::~PlayMode() {
@@ -242,7 +239,8 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	// GL_ERRORS();
 
 	{	//use text renderer to overlay some text:
-		text.draw(line_quads, clip_from_pixel(drawable_size, glm::vec2(20.0f, 20.0f)), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+		title.draw("ESCAPE WILL MAKE ME GOD", drawable_size, glm::vec2(20.0f, 20.0f));
+		body.draw("DEATH IS INEVITABLE", drawable_size, glm::vec2(20.0f, 180.0f));
 	}
 	GL_ERRORS();
 }

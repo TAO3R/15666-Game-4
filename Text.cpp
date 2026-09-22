@@ -202,3 +202,9 @@ void TextRenderer::draw(std::vector< Quad > const &quads, glm::mat4 const &clip_
 
 	GL_ERRORS();
 }
+
+void TextRenderer::draw(std::string const &utf8, glm::uvec2 const &drawable_size,
+			  glm::vec2 const &origin, glm::u8vec4 const &color)
+			  {
+				draw(shape(utf8), clip_from_pixel(drawable_size, origin), color);
+			  }
