@@ -278,7 +278,7 @@ void PlayMode::draw_story_node(Node &n, glm::uvec2 const &drawable_size)
 {
 	//layout knobs, in multiples of the relevant font's line height:
 	constexpr float BlockGap = 1.5f; //title -> body, body -> first choice
-	constexpr float ChoiceGap = 1.5f; //between choices -- keep above 1.0 + 2*HighlightPad/line_height so the boxes don't touch
+	constexpr float ChoiceGap = 1.4f; //between choices -- keep above 1.0 + 2*HighlightPad/choice.line_height() so the boxes don't touch
 
 	constexpr float HighlightPad = 8.0f; //pixels of fill around the selected choice, same on all four sides
 
@@ -291,11 +291,13 @@ void PlayMode::draw_story_node(Node &n, glm::uvec2 const &drawable_size)
 	//measure the whole block first so it can be centered vertically.
 	// (this mirrors the baseline advances in the drawing code below -- change one, change the other)
 	float advance = BlockGap * title.line_height(); //title baseline -> body baseline
+	float bottom_descender = body.descender();
 	if (!n.choices.empty()) {
 		advance += BlockGap * body.line_height(); //body -> first choice
-		advance += float(n.choices.size() - 1) * ChoiceGap * body.line_height();
+		advance += float(n.choices.size() - 1) * ChoiceGap * choice.line_height();
+		bottom_descender = choice.descender();
 	}
-	float block_height = title.ascender() + advance + body.descender();
+	float block_height = title.ascender() + advance + bottom_descender;
 
 	//baseline walks down from the top of the block (origin is at the bottom, so y decreases):
 	float y = 0.5f * (float(drawable_size.y) + block_height) - title.ascender();
@@ -310,15 +312,15 @@ void PlayMode::draw_story_node(Node &n, glm::uvec2 const &drawable_size)
 		bool is_selected = (i == size_t(selected));
 
 		if (is_selected) { //fill the row with Foreground, then draw the text in Background
-			float w = body.measure(n.choices[i].text);
+			float w = choice.measure(n.choices[i].text);
 			float x = 0.5f * (float(drawable_size.x) - w);
 
 			//the text's typographic box, padded equally on all four sides.
 			// using ascender/descender (not the string's own ink) keeps every choice the same height:
 			GLint x0 = GLint(std::floor(x - HighlightPad));
-			GLint y0 = GLint(std::floor(y - body.descender() - HighlightPad));
+			GLint y0 = GLint(std::floor(y - choice.descender() - HighlightPad));
 			GLint x1 = GLint(std::ceil(x + w + HighlightPad));
-			GLint y1 = GLint(std::ceil(y + body.ascender() + HighlightPad));
+			GLint y1 = GLint(std::ceil(y + choice.ascender() + HighlightPad));
 
 			//scissor + clear paints a solid rect without needing any geometry:
 			glEnable(GL_SCISSOR_TEST);
@@ -328,7 +330,7 @@ void PlayMode::draw_story_node(Node &n, glm::uvec2 const &drawable_size)
 			glDisable(GL_SCISSOR_TEST);
 		}
 
-		centered(body, n.choices[i].text, y, (is_selected ? Background : Foreground));
-		y -= ChoiceGap * body.line_height();
+		centered(choice, n.choices[i].text, y, (is_selected ? Background : Foreground));
+		y -= ChoiceGap * choice.line_height();
 	}
 }

@@ -54,6 +54,7 @@ struct PlayMode : Mode {
 	//text:
 	TextRenderer title{data_path("Maratype.otf"), 80};
 	TextRenderer body{data_path("Maratype.otf"), 60};
+	TextRenderer choice{data_path("Maratype.otf"), 44};
 
 	//story
 	std::vector< Node > story;
