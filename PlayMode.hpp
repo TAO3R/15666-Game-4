@@ -2,6 +2,8 @@
 
 #include "Scene.hpp"
 #include "Sound.hpp"
+#include "Text.hpp"
+#include "data_path.hpp"
 
 #include <glm/glm.hpp>
 
@@ -48,4 +50,7 @@ struct PlayMode : Mode {
 	//camera:
 	Scene::Camera *camera = nullptr;
 
+	//text:
+	TextRenderer text{data_path("Maratype.otf"), 128};
+	std::vector< TextRenderer::Quad > line_quads;
 };

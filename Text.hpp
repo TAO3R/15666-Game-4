@@ -40,4 +40,25 @@ struct TextRenderer {
 	};
 	std::unordered_map< uint32_t, Glyph > cache;
 	Glyph const &get(uint32_t glyph_index);
+
+	//quads to vertices, then to the GPU via color_texture_program.
+	// clip_from_pixel maps quad pixel coordinates into clip space
+	// (quad y is up, baseline sits at y == 0, pen starts at x == 0).
+	void draw(std::vector< Quad > const &quads, glm::mat4 const &clip_from_pixel,
+	glm::u8vec4 const &color = glm::u8vec4(0xff));
 };
+
+//pixel -> clip matrix for a drawable_size window.
+// origin is where the pen starts, in pixels from the lower-left corner
+// (it lands on the text's baseline, so leave room below for descenders).
+inline glm::mat4 clip_from_pixel(glm::uvec2 const &drawable_size, glm::vec2 const &origin = glm::vec2(0.0f)) {
+      float w = float(drawable_size.x);
+      float h = float(drawable_size.y);
+      //glm::mat4 takes *columns*:
+      return glm::mat4(
+              2.0f / w, 0.0f, 0.0f, 0.0f,
+              0.0f, 2.0f / h, 0.0f, 0.0f,
+              0.0f, 0.0f, 1.0f, 0.0f,
+              2.0f * origin.x / w - 1.0f, 2.0f * origin.y / h - 1.0f, 0.0f, 1.0f
+      );
+}
