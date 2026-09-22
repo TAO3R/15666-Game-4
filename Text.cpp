@@ -100,6 +100,14 @@ float TextRenderer::line_height() const {
 	return face->size->metrics.height / 64.0f;
 }
 
+float TextRenderer::ascender() const {
+	return face->size->metrics.ascender / 64.0f;
+}
+
+float TextRenderer::descender() const {
+	return -face->size->metrics.descender / 64.0f; //freetype reports this as negative
+}
+
 TextRenderer::Glyph const &TextRenderer::get(uint32_t glyph_index) {
 	auto found = cache.find(glyph_index);
 	if (found != cache.end()) return found->second;

@@ -58,5 +58,6 @@ struct PlayMode : Mode {
 	//story
 	std::vector< Node > story;
 	uint32_t story_stage;
+	uint8_t selected = 0; //index into the current node's choices
 	void draw_story_node(Node &, glm::uvec2 const &drawable_size);
 };

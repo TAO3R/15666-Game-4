@@ -46,6 +46,10 @@ Load< Sound::Sample > honk_sample(LoadTagDefault, []() -> Sound::Sample const * 
 });
 
 
+//the whole UI is two colors; the selected choice just swaps them:
+static glm::u8vec4 const Background = glm::u8vec4(0x73, 0xff, 0x00, 0xff);
+static glm::u8vec4 const Foreground = glm::u8vec4(0x00, 0x00, 0x00, 0xff);
+
 PlayMode::PlayMode() : scene(*hexapod_scene) {
 	//get pointers to leg for convenience:
 	for (auto &transform : scene.transforms) {
@@ -80,6 +84,21 @@ PlayMode::~PlayMode() {
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
 
 	if (evt.type == SDL_EVENT_KEY_DOWN) {
+		size_t choice_count = story[story_stage].choices.size();
+		if (evt.key.key == SDLK_UP) {
+			if (choice_count) selected = uint8_t((selected + choice_count - 1) % choice_count);
+			return true;
+		} else if (evt.key.key == SDLK_DOWN) {
+			if (choice_count) selected = uint8_t((selected + 1) % choice_count);
+			return true;
+		} else if (evt.key.key == SDLK_RETURN || evt.key.key == SDLK_KP_ENTER) {
+			if (selected < choice_count) {
+				story_stage = story[story_stage].choices[selected].next;
+				selected = 0; //the new node's choices are a different list
+			}
+			return true;
+		}
+
 		if (evt.key.key == SDLK_ESCAPE) {
 			SDL_SetWindowRelativeMouseMode(Mode::window, false);
 			return true;
@@ -210,7 +229,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	glUniform3fv(lit_color_texture_program->LIGHT_ENERGY_vec3, 1, glm::value_ptr(glm::vec3(1.0f, 1.0f, 0.95f)));
 	glUseProgram(0);
 
-	glClearColor(0.45f, 1.0f, 0.0f, 1.0f);
+	glClearColor(Background.r / 255.0f, Background.g / 255.0f, Background.b / 255.0f, 1.0f);
 	glClearDepth(1.0f); //1.0 is actually the default value to clear the depth buffer to, but FYI you can change it.
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -258,27 +277,58 @@ glm::vec3 PlayMode::get_leg_tip_position() {
 void PlayMode::draw_story_node(Node &n, glm::uvec2 const &drawable_size)
 {
 	//layout knobs, in multiples of the relevant font's line height:
-	constexpr float TopMargin = 1.0f; //from the top edge down to the title's baseline
 	constexpr float BlockGap = 1.5f; //title -> body, body -> first choice
-	constexpr float ChoiceGap = 1.2f; //between choices
+	constexpr float ChoiceGap = 1.5f; //between choices -- keep above 1.0 + 2*HighlightPad/line_height so the boxes don't touch
+
+	constexpr float HighlightPad = 8.0f; //pixels of fill around the selected choice, same on all four sides
 
 	//horizontally center one line on its own measured width:
-	auto centered = [&drawable_size](TextRenderer &font, std::string const &text, float baseline_y) {
+	auto centered = [&drawable_size](TextRenderer &font, std::string const &text, float baseline_y, glm::u8vec4 const &color) {
 		float x = 0.5f * (float(drawable_size.x) - font.measure(text));
-		font.draw(text, drawable_size, glm::vec2(x, baseline_y));
+		font.draw(text, drawable_size, glm::vec2(x, baseline_y), color);
 	};
 
-	//baseline walks down from the top of the screen (origin is at the bottom, so y decreases):
-	float y = float(drawable_size.y) - TopMargin * title.line_height();
+	//measure the whole block first so it can be centered vertically.
+	// (this mirrors the baseline advances in the drawing code below -- change one, change the other)
+	float advance = BlockGap * title.line_height(); //title baseline -> body baseline
+	if (!n.choices.empty()) {
+		advance += BlockGap * body.line_height(); //body -> first choice
+		advance += float(n.choices.size() - 1) * ChoiceGap * body.line_height();
+	}
+	float block_height = title.ascender() + advance + body.descender();
 
-	centered(title, n.title, y);
+	//baseline walks down from the top of the block (origin is at the bottom, so y decreases):
+	float y = 0.5f * (float(drawable_size.y) + block_height) - title.ascender();
+
+	centered(title, n.title, y, Foreground);
 	y -= BlockGap * title.line_height();
 
-	centered(body, n.body, y);
+	centered(body, n.body, y, Foreground);
 	y -= BlockGap * body.line_height();
 
-	for (auto const &choice : n.choices) {
-		centered(body, choice.text, y);
+	for (size_t i = 0; i < n.choices.size(); ++i) {
+		bool is_selected = (i == size_t(selected));
+
+		if (is_selected) { //fill the row with Foreground, then draw the text in Background
+			float w = body.measure(n.choices[i].text);
+			float x = 0.5f * (float(drawable_size.x) - w);
+
+			//the text's typographic box, padded equally on all four sides.
+			// using ascender/descender (not the string's own ink) keeps every choice the same height:
+			GLint x0 = GLint(std::floor(x - HighlightPad));
+			GLint y0 = GLint(std::floor(y - body.descender() - HighlightPad));
+			GLint x1 = GLint(std::ceil(x + w + HighlightPad));
+			GLint y1 = GLint(std::ceil(y + body.ascender() + HighlightPad));
+
+			//scissor + clear paints a solid rect without needing any geometry:
+			glEnable(GL_SCISSOR_TEST);
+			glScissor(x0, y0, GLsizei(x1 - x0), GLsizei(y1 - y0));
+			glClearColor(Foreground.r / 255.0f, Foreground.g / 255.0f, Foreground.b / 255.0f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT); //color only -- clearing depth here would wipe the scene
+			glDisable(GL_SCISSOR_TEST);
+		}
+
+		centered(body, n.choices[i].text, y, (is_selected ? Background : Foreground));
 		y -= ChoiceGap * body.line_height();
 	}
 }

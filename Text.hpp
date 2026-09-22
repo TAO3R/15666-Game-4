@@ -32,6 +32,8 @@ struct TextRenderer {
 	float measure(std::string const &utf8);
 
 	float line_height() const; //pixels between baselines
+	float ascender() const; //pixels the typographic box reaches above the baseline
+	float descender() const; //pixels it reaches below (positive)
 
 	FT_Library library = nullptr;
 	FT_Face face = nullptr;
