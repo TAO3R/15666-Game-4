@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GL.hpp"
+#include "Story.hpp"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -26,6 +27,9 @@ struct TextRenderer {
 
 	//shape one line of utf8 text into positioned glyph quads:
 	std::vector< Quad > shape(std::string const &utf8);
+
+	//advance width of one line of utf8 text, in pixels:
+	float measure(std::string const &utf8);
 
 	float line_height() const; //pixels between baselines
 

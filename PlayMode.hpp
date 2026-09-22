@@ -4,6 +4,7 @@
 #include "Sound.hpp"
 #include "Text.hpp"
 #include "data_path.hpp"
+#include "Story.hpp"
 
 #include <glm/glm.hpp>
 
@@ -51,6 +52,11 @@ struct PlayMode : Mode {
 	Scene::Camera *camera = nullptr;
 
 	//text:
-	TextRenderer title{data_path("Maratype.otf"), 128};
-	TextRenderer body{data_path("Maratype.otf"), 64};
+	TextRenderer title{data_path("Maratype.otf"), 80};
+	TextRenderer body{data_path("Maratype.otf"), 60};
+
+	//story
+	std::vector< Node > story;
+	uint32_t story_stage;
+	void draw_story_node(Node &, glm::uvec2 const &drawable_size);
 };

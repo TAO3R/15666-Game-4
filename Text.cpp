@@ -160,6 +160,23 @@ std::vector< TextRenderer::Quad > TextRenderer::shape(std::string const &utf8) {
 	return quads;
 }
 
+float TextRenderer::measure(std::string const &utf8) {
+	//same shaping pass as shape(), but only the advances are kept:
+	hb_buffer_t *buf = hb_buffer_create();
+	hb_buffer_add_utf8(buf, utf8.c_str(), int(utf8.size()), 0, int(utf8.size()));
+	hb_buffer_guess_segment_properties(buf);
+	hb_shape(font, buf, nullptr, 0);
+
+	unsigned int count = 0;
+	hb_glyph_position_t const *positions = hb_buffer_get_glyph_positions(buf, &count);
+
+	float width = 0.0f;
+	for (unsigned int i = 0; i < count; ++i) width += positions[i].x_advance / 64.0f;
+
+	hb_buffer_destroy(buf);
+	return width;
+}
+
 void TextRenderer::draw(std::vector< Quad > const &quads, glm::mat4 const &clip_from_pixel, glm::u8vec4 const &color) {
 	if (quads.empty()) return;
 

@@ -68,6 +68,10 @@ PlayMode::PlayMode() : scene(*hexapod_scene) {
 	//start music loop playing:
 	// (note: position will be over-ridden in update())
 	leg_tip_loop = Sound::loop_3D(*dusty_floor_sample, 1.0f, get_leg_tip_position(), 10.0f);
+
+	//story
+	story = make_story();
+	story_stage = 0;
 }
 
 PlayMode::~PlayMode() {
@@ -239,8 +243,9 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	// GL_ERRORS();
 
 	{	//use text renderer to overlay some text:
-		title.draw("ESCAPE WILL MAKE ME GOD", drawable_size, glm::vec2(20.0f, 20.0f));
-		body.draw("DEATH IS INEVITABLE", drawable_size, glm::vec2(20.0f, 180.0f));
+		// title.draw("ESCAPE WILL MAKE ME GOD", drawable_size, glm::vec2(20.0f, 20.0f));
+		// body.draw("DEATH IS INEVITABLE", drawable_size, glm::vec2(20.0f, 180.0f));
+		draw_story_node(story[story_stage], drawable_size);
 	}
 	GL_ERRORS();
 }
@@ -248,4 +253,32 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 glm::vec3 PlayMode::get_leg_tip_position() {
 	//the vertex position here was read from the model in blender:
 	return lower_leg->make_world_from_local() * glm::vec4(-1.26137f, -11.861f, 0.0f, 1.0f);
+}
+
+void PlayMode::draw_story_node(Node &n, glm::uvec2 const &drawable_size)
+{
+	//layout knobs, in multiples of the relevant font's line height:
+	constexpr float TopMargin = 1.0f; //from the top edge down to the title's baseline
+	constexpr float BlockGap = 1.5f; //title -> body, body -> first choice
+	constexpr float ChoiceGap = 1.2f; //between choices
+
+	//horizontally center one line on its own measured width:
+	auto centered = [&drawable_size](TextRenderer &font, std::string const &text, float baseline_y) {
+		float x = 0.5f * (float(drawable_size.x) - font.measure(text));
+		font.draw(text, drawable_size, glm::vec2(x, baseline_y));
+	};
+
+	//baseline walks down from the top of the screen (origin is at the bottom, so y decreases):
+	float y = float(drawable_size.y) - TopMargin * title.line_height();
+
+	centered(title, n.title, y);
+	y -= BlockGap * title.line_height();
+
+	centered(body, n.body, y);
+	y -= BlockGap * body.line_height();
+
+	for (auto const &choice : n.choices) {
+		centered(body, choice.text, y);
+		y -= ChoiceGap * body.line_height();
+	}
 }
